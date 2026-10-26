@@ -130,11 +130,52 @@ impl SheetMetadata {
 }
 
 #[pyclass]
+pub struct Hyperlink {
+    #[pyo3(get)]
+    range: ((u32, u32), (u32, u32)),
+    #[pyo3(get)]
+    target: Option<String>,
+    #[pyo3(get)]
+    location: Option<String>,
+    #[pyo3(get)]
+    displayed_text: Option<String>,
+    #[pyo3(get)]
+    tooltip: Option<String>,
+}
+
+#[pymethods]
+impl Hyperlink {
+    fn __repr__(&self) -> PyResult<String> {
+        let repr_option =
+            |v: &Option<String>| v.as_ref().map_or("None".to_string(), |s| format!("{s:?}"));
+        Ok(format!(
+            "Hyperlink(range={:?}, target={}, location={})",
+            self.range,
+            repr_option(&self.target),
+            repr_option(&self.location)
+        ))
+    }
+}
+
+impl From<&calamine::Hyperlink> for Hyperlink {
+    fn from(value: &calamine::Hyperlink) -> Self {
+        Hyperlink {
+            range: (value.range.start, value.range.end),
+            target: value.target.clone(),
+            location: value.location.clone(),
+            displayed_text: value.displayed_text.clone(),
+            tooltip: value.tooltip.clone(),
+        }
+    }
+}
+
+#[pyclass]
 pub struct CalamineSheet {
     #[pyo3(get)]
     name: String,
     range: Arc<Range<Data>>,
     merged_cell_ranges: Option<Vec<Dimensions>>,
+    hyperlinks: Option<Vec<calamine::Hyperlink>>,
 }
 
 impl CalamineSheet {
@@ -142,11 +183,13 @@ impl CalamineSheet {
         name: String,
         range: Range<Data>,
         merged_cell_ranges: Option<Vec<Dimensions>>,
+        hyperlinks: Option<Vec<calamine::Hyperlink>>,
     ) -> Self {
         CalamineSheet {
             name,
             range: Arc::new(range),
             merged_cell_ranges,
+            hyperlinks,
         }
     }
 }
@@ -229,6 +272,13 @@ impl CalamineSheet {
         slf.merged_cell_ranges
             .as_ref()
             .map(|r| r.iter().map(|d| (d.start, d.end)).collect())
+    }
+
+    #[getter]
+    fn hyperlinks(slf: PyRef<'_, Self>) -> Option<Vec<Hyperlink>> {
+        slf.hyperlinks
+            .as_ref()
+            .map(|h| h.iter().map(Hyperlink::from).collect())
     }
 }
 

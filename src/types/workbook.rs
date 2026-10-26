@@ -3,7 +3,8 @@ use std::io::{BufReader, Cursor, Read};
 use std::path::PathBuf;
 
 use calamine::{
-    open_workbook_auto, open_workbook_auto_from_rs, Error as CalamineCrateError, Reader, Sheets,
+    open_workbook_auto, open_workbook_auto_from_rs, Error as CalamineCrateError, Hyperlink, Reader,
+    Sheets,
 };
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
@@ -99,6 +100,28 @@ impl SheetsEnum {
                     .map_err(Error::Calamine),
                 Sheets::Xlsx(xlsx_f) => xlsx_f
                     .merge_cells_by_sheet_name(name)
+                    .map(Some)
+                    .map_err(CalamineCrateError::Xlsx)
+                    .map_err(Error::Calamine),
+                _ => Ok(None),
+            },
+            SheetsEnum::None => Err(Error::WorkbookClosed),
+        }
+    }
+
+    fn worksheet_hyperlinks(&mut self, name: &str) -> Result<Option<Vec<Hyperlink>>, Error> {
+        match self {
+            SheetsEnum::File(f) => match f {
+                Sheets::Xlsx(xlsx_f) => xlsx_f
+                    .hyperlinks_by_sheet_name(name)
+                    .map(Some)
+                    .map_err(CalamineCrateError::Xlsx)
+                    .map_err(Error::Calamine),
+                _ => Ok(None),
+            },
+            SheetsEnum::FileLike(f) => match f {
+                Sheets::Xlsx(xlsx_f) => xlsx_f
+                    .hyperlinks_by_sheet_name(name)
                     .map(Some)
                     .map_err(CalamineCrateError::Xlsx)
                     .map_err(Error::Calamine),
@@ -357,10 +380,12 @@ impl CalamineWorkbook {
     fn get_sheet_by_name(&mut self, name: &str) -> PyResult<CalamineSheet> {
         let range = self.sheets.worksheet_range(name)?;
         let merge_cells_range = self.sheets.worksheet_merge_cells(name)?;
+        let hyperlinks = self.sheets.worksheet_hyperlinks(name)?;
         Ok(CalamineSheet::new(
             name.to_owned(),
             range,
             merge_cells_range,
+            hyperlinks,
         ))
     }
 

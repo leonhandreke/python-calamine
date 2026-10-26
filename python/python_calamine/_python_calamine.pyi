@@ -46,6 +46,26 @@ class SheetMetadata:
     ) -> SheetMetadata: ...
 
 @typing.final
+class Hyperlink:
+    range: tuple[tuple[int, int], tuple[int, int]]
+    """Cell or range the hyperlink is anchored to (tuple[start coordinate, end coordinate])."""
+    target: str | None
+    """External link target (URL, email address or file).
+
+    `None` for purely internal hyperlinks, where only `location` is set.
+    """
+    location: str | None
+    """In-file location the hyperlink points to.
+
+    For a purely internal link this is the cell, range or named range it targets
+    (e.g. `'Sheet2'!B5`). For an external file link it holds the sub-anchor.
+    """
+    displayed_text: str | None
+    """Optional text displayed in the cell instead of the target."""
+    tooltip: str | None
+    """Optional tooltip shown when hovering the hyperlink."""
+
+@typing.final
 class CalamineSheet:
     name: str
     @property
@@ -122,6 +142,16 @@ class CalamineSheet:
 
         Returns:
             list of merged cell ranges (tuple[start coordinate, end coordinate]) or None for unsupported format
+        """
+
+    @property
+    def hyperlinks(self) -> list[Hyperlink] | None:
+        """Return a copy of hyperlinks.
+
+        Support only for xlsx.
+
+        Returns:
+            list of hyperlinks or None for unsupported format
         """
 
 @typing.final
@@ -301,6 +331,7 @@ __all__ = [
     "CalamineSheet",
     "CalamineTable",
     "CalamineWorkbook",
+    "Hyperlink",
     "PasswordError",
     "SheetMetadata",
     "SheetTypeEnum",

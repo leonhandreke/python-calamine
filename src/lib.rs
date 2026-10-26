@@ -2,8 +2,8 @@ use pyo3::prelude::*;
 
 mod types;
 use crate::types::{
-    CalamineError, CalamineSheet, CalamineTable, CalamineWorkbook, CellValue, Error, PasswordError,
-    SheetMetadata, SheetTypeEnum, SheetVisibleEnum, TableNotFound, TablesNotLoaded,
+    CalamineError, CalamineSheet, CalamineTable, CalamineWorkbook, CellValue, Error, Hyperlink,
+    PasswordError, SheetMetadata, SheetTypeEnum, SheetVisibleEnum, TableNotFound, TablesNotLoaded,
     TablesNotSupported, WorkbookClosed, WorksheetNotFound, XmlError, ZipError,
 };
 
@@ -26,6 +26,7 @@ fn _python_calamine(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<SheetTypeEnum>()?;
     m.add_class::<SheetVisibleEnum>()?;
     m.add_class::<CalamineTable>()?;
+    m.add_class::<Hyperlink>()?;
     m.add("CalamineError", py.get_type::<CalamineError>())?;
     m.add("PasswordError", py.get_type::<PasswordError>())?;
     m.add("WorksheetNotFound", py.get_type::<WorksheetNotFound>())?;
